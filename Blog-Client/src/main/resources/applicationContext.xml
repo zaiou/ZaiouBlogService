@@ -1,0 +1,292 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:cache="http://www.springframework.org/schema/cache"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/cache http://www.springframework.org/schema/cache/spring-cache-4.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd
+		http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop.xsd
+		http://www.springframework.org/schema/task  http://www.springframework.org/schema/task/spring-task.xsd" default-lazy-init="true" >
+
+
+    <!--配置文件-->
+    <!--数据源-->
+    <!--事物-->
+    <!--service-->
+
+    <!-- 自动扫描包中的bean -->
+    <context:component-scan base-package="com.zclient.*"/>
+    <!-- enable autowire -->
+
+    <!-- 启用自定义缓存注解开关 -->
+    <cache:annotation-driven cache-manager="ehRedisCacheManager"/>
+
+    <context:annotation-config/>
+
+    <!--配置属性文件 -->
+    <context:property-placeholder location="classpath:properties/jdbc.properties,classpath:properties/redis.properties,classpath:properties/elasticsearch.properties"/>
+    <!-- enable transaction demarcation with annotations -->
+
+    <tx:annotation-driven/>
+
+    <!-- 支持异步方法执行 -->
+    <task:annotation-driven executor="annotationExecutor"/>
+    <!-- 支持 @Async 注解 -->
+    <task:executor id="annotationExecutor" pool-size="100"/>
+
+    <!--配置druid监控spring jdbc start-->
+    <!--<bean id="druid-stat-interceptor"-->
+          <!--class="com.alibaba.druid.support.spring.stat.DruidStatInterceptor">-->
+    <!--</bean>-->
+    <!--<bean id="druid-stat-pointcut" class="org.springframework.aop.support.JdkRegexpMethodPointcut"-->
+          <!--scope="prototype">-->
+        <!--<property name="patterns">-->
+            <!--<list>-->
+                <!--<value>com.lb.service.*</value>-->
+                <!--<value>com.lb.mapper.*</value>-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
+    <!--<aop:config>-->
+        <!--&lt;!&ndash;pointcut-ref="druid-stat-pointcut"在idea中报Cannot resolve Spring Pointcut ‘druid-stat-pointcut‘  不用管它&ndash;&gt;-->
+        <!--<aop:advisor advice-ref="druid-stat-interceptor"-->
+                     <!--pointcut-ref="druid-stat-pointcut"/>-->
+    <!--</aop:config>-->
+    <bean id="parent" class="com.alibaba.druid.pool.DruidDataSource" init-method="init" destroy-method="close"
+          lazy-init="true">
+        <!-- 开启Druid的监控统计功能 -->
+        <property name="filters" value="wall,stat,log4j,config"/>
+        <property name="maxActive" value="20"/>
+        <property name="initialSize" value="2"/>
+        <property name="maxWait" value="60000"/>
+        <property name="minIdle" value="1"/>
+        <property name="timeBetweenEvictionRunsMillis" value="3000"/>
+        <property name="minEvictableIdleTimeMillis" value="300000"/>
+        <property name="validationQuery" value="SELECT 'x' FROM DUAL"/>
+        <property name="testWhileIdle" value="true"/>
+        <property name="testOnBorrow" value="false"/>
+        <property name="testOnReturn" value="false"/>
+        <property name="proxyFilters">
+            <list>
+                <ref bean="wall-filter"/>
+            </list>
+        </property>
+    </bean>
+    <!--配置druid监控spring jdbc end-->
+
+    <!-- 配置数据源，使用阿里巴巴连接池Druid -->
+    <bean id="dataSource" parent="parent">
+        <property name="url" value="${jdbc.url_pro}"/>
+        <property name="username" value="${jdbc.username_pro}"/>
+        <property name="password" value="${jdbc.password_pro}"/>
+
+
+        <!--保存Druid的监控记录-->
+        <!-- 配置监控统计拦截的filters，去掉后监控界面sql无法统计 -->
+        <!--<property name="filters" value="stat"/> 1111111111111111111111-->
+        <!--<property name="timeBetweenLogStatsMillis" value="1000"/>-->
+        <!--<property name="statLogger" ref="myStatLogger"/> 111111111111111111111111111-->
+    </bean>
+
+    <bean id="wall-filter-config" class="com.alibaba.druid.wall.WallConfig"
+          init-method="init">
+        <!-- 指定配置装载的目录 -->
+        <property name="dir" value="META-INF/druid/wall/mysql"/>
+        <property name="multiStatementAllow" value="true"/><!-- 是否允许一次执行多条语句 -->
+        <property name="callAllow" value="false"/><!-- 是否允许通过jdbc的call语法调用存储过程 -->
+        <property name="truncateAllow" value="false"/><!-- truncate语句是危险 -->
+        <property name="createTableAllow" value="true"/><!-- 是否允许创建表 -->
+        <property name="alterTableAllow" value="true"/><!-- 是否允许执行Alter Table语句 -->
+        <property name="dropTableAllow" value="true"/><!-- 是否允许修改表 -->
+        <property name="commentAllow" value="false"/><!-- 是否允许语句中存在注释，Oracle的用户不用担心，Wall能够识别hints和注释的区别 -->
+        <property name="useAllow" value="true"/><!-- 是否允许执行mysql的use语句，缺省打开 -->
+        <property name="describeAllow" value="false"/><!-- 是否允许执行mysql的describe语句，缺省打开 -->
+        <property name="showAllow" value="false"/><!-- 是否允许执行mysql的show语句，缺省打开 -->
+    </bean>
+
+    <bean id="wall-filter" class="com.alibaba.druid.wall.WallFilter">
+        <property name="dbType" value="mysql"/>
+        <property name="config" ref="wall-filter-config"/>
+    </bean>
+
+    <!-- sql sessionfactoty-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <!-- 配置扫描Domain的包路径 ,给bean下面的类起别名，mapper文件中直接可以写对应类名，不用写全路径-->
+        <property name="typeAliasesPackage" value="com.zclient.model"/>
+        <!-- 配置mybatis配置文件的位置 -->
+        <property name="configLocation" value="classpath:mybatis-config.xml"/>
+        <!-- 配置扫描Mapper XML的位置 ，加载mapper的映射文件-->
+        <property name="mapperLocations">
+            <array>
+                <value>classpath:mapper/*.xml</value>
+            </array>
+        </property>
+    </bean>
+
+    <!-- 扫描mapper接口（即dao），Spring会自动查找其下的类；并注入到MapperFactoryBean  https://blog.csdn.net/xchyi/article/details/74094189 -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.zclient.mapper"/>
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory"/>
+    </bean>
+
+    <!-- 事务管理管理器（transaction manager） -->
+    <bean id="transactionManager"
+          class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+
+    <!-- 配置事务通知属性 对@Transactional这个注解进行的驱动-->
+    <tx:advice id="txAdvice" transaction-manager="transactionManager">
+        <!-- 定义事务传播属性 -->
+        <tx:attributes>
+            <tx:method name="insert*" propagation="REQUIRED"/>
+            <tx:method name="update*" propagation="REQUIRED"/>
+            <tx:method name="edit*" propagation="REQUIRED"/>
+            <tx:method name="save*" propagation="REQUIRED"/>
+            <tx:method name="add*" propagation="REQUIRED"/>
+            <tx:method name="new*" propagation="REQUIRED"/>
+            <tx:method name="set*" propagation="REQUIRED"/>
+            <tx:method name="remove*" propagation="REQUIRED"/>
+            <tx:method name="delete*" propagation="REQUIRED"/>
+            <tx:method name="change*" propagation="REQUIRED"/>
+            <tx:method name="check*" propagation="REQUIRED"/>
+            <tx:method name="get*" propagation="REQUIRED" read-only="true"/>
+            <tx:method name="find*" propagation="REQUIRED" read-only="true"/>
+            <tx:method name="load*" propagation="REQUIRED" read-only="true"/>
+            <tx:method name="*" propagation="REQUIRED" read-only="true"/>
+        </tx:attributes>
+    </tx:advice>
+
+    <!-- 配置事务切面 配置事务影响的类-->
+    <aop:config proxy-target-class="true">
+        <aop:pointcut id="pointCut" expression="execution(* com.zclient.service.*.*(..))"/>
+        <aop:advisor advice-ref="txAdvice" pointcut-ref="pointCut"/>
+    </aop:config>
+
+
+    <!--&lt;!&ndash; 数据库定时备份服务  start&ndash;&gt;   111111111111111111111-->
+    <!--&lt;!&ndash; 定义调用对象和调用对象的方法 &ndash;&gt;-->
+    <!--<bean id="jobDetail" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">-->
+        <!--<property name="targetObject" ref="mysqlService"/>-->
+        <!--<property name="targetMethod" value="exportDataBase"/>-->
+    <!--</bean>-->
+    <!--<bean id="quartzjob" class="org.springframework.scheduling.quartz.MethodInvokingJobDetailFactoryBean">-->
+        <!--<property name="targetObject" ref="jmxclient"/>-->
+        <!--<property name="targetMethod" value="quartzjob"/>-->
+    <!--</bean>-->
+    <!--&lt;!&ndash;定义触发时间  &ndash;&gt;-->
+    <!--<bean id="myTrigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">-->
+        <!--<property name="jobDetail" ref="jobDetail"/>-->
+        <!--&lt;!&ndash; cron表达式 &ndash;&gt;-->
+        <!--<property name="cronExpression" value="0 59 2 ? * FRI"/>-->
+    <!--</bean>-->
+    <!--<bean id="quartz_trigger" class="org.springframework.scheduling.quartz.CronTriggerFactoryBean">-->
+        <!--<property name="jobDetail" ref="quartzjob"/>-->
+        <!--<property name="cronExpression" value="* * * * * ?"/>-->
+    <!--</bean>-->
+    <!--&lt;!&ndash; 总管理类 如果将lazy-init='false'那么容器启动就会执行调度程序 &ndash;&gt;-->
+    <!--<bean id="scheduler" class="org.springframework.scheduling.quartz.SchedulerFactoryBean">-->
+        <!--<property name="triggers">-->
+            <!--<list>-->
+                <!--<ref bean="myTrigger"/>-->
+                <!--<ref bean="quartz_trigger"/>-->
+            <!--</list>-->
+        <!--</property>-->
+    <!--</bean>-->
+    <!--&lt;!&ndash; 数据库定时备份服务  end &ndash;&gt;-->
+
+    <!--ehcache start-->
+    <!-- myCache 操作对象 -->
+    <bean id="cacheManagerFactory" class="org.springframework.cache.ehcache.EhCacheManagerFactoryBean">
+        <property name="configLocation" value="classpath:ehcache.xml"/>
+        <!--true:单例，一个cacheManager对象共享；false：多个对象独立 -->
+        <property name="shared" value="true"/>
+        <property name="cacheManagerName" value="cacheManagerFactory"/>
+    </bean>
+
+    <bean id="ehCacheCacheManager" class="org.springframework.cache.ehcache.EhCacheCacheManager">
+        <property name="cacheManager" ref="cacheManagerFactory"/>
+    </bean>
+    <!-- myCache 操作对象 -->
+    <bean id="myCache" class="org.springframework.cache.ehcache.EhCacheFactoryBean">
+        <!-- cacheName对应ehcache.xml中的cache name="myCache" -->
+        <property name="cacheName" value="myCache"/>
+        <property name="cacheManager" ref="cacheManagerFactory"/>
+    </bean>
+    <!--ehcache end-->
+
+
+    <!-- 多缓存配置开始 -->
+    <!-- 自定义ehcache+redis -->
+    <bean id="ehRedisCacheManager" class="org.springframework.cache.support.SimpleCacheManager">
+        <property name="caches">
+            <set>
+                <bean id="ehRedisCache" class="com.zclient.cache.EhRedisCache">
+                    <!--<property name="redisTemplate" ref="redisTemplate"/>-->
+                    <!--<property name="ehCache" ref="myCache"/>-->
+                    <property name="name" value="myCache"/>
+                    <!-- <property name="liveTime" value="3600"/> -->
+                </bean>
+            </set>
+        </property>
+    </bean>
+    <!-- 多缓存配置结束 -->
+
+    <!-- Default bean name is 'mongo' 2222222222222222222222 -->
+    <!--<mongo:db-factory id="mongoDbFactory"-->
+    <!--host="${mongo.host}"-->
+    <!--port="${mongo.port}"/>-->
+    <!--<bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">-->
+    <!--<constructor-arg name="mongoDbFactory" ref="mongoDbFactory"/>-->
+    <!--</bean>-->
+    <!-- 定义mongo对象，对应的是mongodb官方jar包中的Mongo，replica-set设置集群副本的ip地址和端口 -->
+    <!--<mongo:mongo-client id="mongoClient" host="${mongo.host}" port="${mongo.port}" credentials="${mongo.user}:${mongo.pwd}@${mongo.defaultDbName}">-->
+
+    <!--<mongo:mongo-client id="mongoClient" host="${mongo.host}" port="${mongo.port}">  11111111111111111111-->
+        <!--<mongo:client-options-->
+                <!--connections-per-host="${mongo.connectionsPerHost}"-->
+                <!--min-connections-per-host="${mongo.minConnectionsPerHost}"-->
+                <!--threads-allowed-to-block-for-connection-multiplier="${mongo.threadsAllowedToBlockForConnectionMultiplier}"-->
+                <!--connect-timeout="${mongo.connectTimeout}"-->
+                <!--max-wait-time="${mongo.maxWaitTime}"-->
+                <!--socket-keep-alive="${mongo.socketKeepAlive}"-->
+                <!--socket-timeout="${mongo.socketTimeout}"-->
+        <!--/>-->
+    <!--</mongo:mongo-client>-->
+
+    <!--&lt;!&ndash; dbname="${mongo.defaultDbName}" host="${mongo.host}"-->
+                      <!--port="${mongo.port}" username="${mongo.user}" password="${mongo.pwd}"-->
+                      <!--mongo-ref="mongoClient" &ndash;&gt;-->
+    <!--<mongo:db-factory id="mongoDbFactory"-->
+                      <!--dbname="${mongo.defaultDbName}"-->
+                      <!--mongo-ref="mongoClient"/>-->
+
+    <!--&lt;!&ndash; 1.Spring提供的mongodb操作模板&ndash;&gt;-->
+    <!--&lt;!&ndash;<mongo:template id="mongoTemplate" db-factory-ref="mongoDbFactory" write-concern="NORMAL"/>&ndash;&gt;-->
+    <!--&lt;!&ndash; 2.Spring提供的mongodb操作模板&ndash;&gt;-->
+    <!--<bean id="mongoTemplate" class="org.springframework.data.mongodb.core.MongoTemplate">-->
+        <!--<constructor-arg ref="mongoDbFactory"/>-->
+    <!--</bean>-->
+
+
+
+    <!--配置elasticsearch 参考文档 https://blog.csdn.net/u014201191/article/details/46508311；http://www.jb51.net/article/114215.htm-->
+    <!--<import resource="elasticseach.xml" />-->
+    <!--&lt;!&ndash;httpclient配置&ndash;&gt; 1111111111111111111111111111111111111-->
+    <!--<import resource="spring/bean-httpclient.xml"/>-->
+    <!--&lt;!&ndash;spring rabbitmq配置&ndash;&gt;-->
+    <!--<import resource="spring/rabbitmq.xml"/>-->
+    <!--&lt;!&ndash;websocket&ndash;&gt;-->
+    <!--<import resource="spring/websocket.xml"/>-->
+    <!--&lt;!&ndash;kafka&ndash;&gt;-->
+    <!--<import resource="spring/kafka-consumer.xml"/>-->
+
+    <!--<bean id="myStatLogger" class="com.myblog.druid.MyStatLogger"/>-->
+
+</beans>

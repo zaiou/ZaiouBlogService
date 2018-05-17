@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.com.zclient.mapper.AdminAuthMapper" >
+  <resultMap id="BaseResultMap" type="com.zclient.model.AdminAuth" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="adminname" property="adminname" jdbcType="VARCHAR" />
+    <result column="adminpasswd" property="adminpasswd" jdbcType="VARCHAR" />
+    <result column="roleid" property="roleid" jdbcType="INTEGER" />
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from admin_auth
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.zclient.model.AdminAuth" >
+    insert into admin_auth (id, adminname, adminpasswd
+    )
+    values (#{id,jdbcType=INTEGER}, #{adminname,jdbcType=VARCHAR}, #{adminpasswd,jdbcType=VARCHAR}
+    )
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.zclient.model.AdminAuth" >
+    update admin_auth
+    set adminname = #{adminname,jdbcType=VARCHAR},
+    adminpasswd = #{adminpasswd,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select id, adminname, adminpasswd
+    from admin_auth
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap" >
+    select id, adminname, adminpasswd
+    from admin_auth
+  </select>
+  <!--用户登录-->
+  <select id="login" resultMap="BaseResultMap" >
+    select id, adminname, adminpasswd
+    from admin_auth
+    where adminname = #{username,jdbcType=VARCHAR} and adminpasswd=#{password,jdbcType=VARCHAR}
+  </select>
+  <!--获取用户信息通过用户名-->
+  <select id="getAdminUserInfoByUsername" resultMap="BaseResultMap" parameterType="java.lang.String" >
+    select id, adminname, adminpasswd
+    from admin_auth
+    where adminname = #{username,jdbcType=VARCHAR}
+  </select>
+</mapper>

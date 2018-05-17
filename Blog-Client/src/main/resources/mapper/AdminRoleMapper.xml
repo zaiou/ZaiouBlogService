@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.com.zclient.mapper.AdminRoleMapper" >
+  <resultMap id="BaseResultMap" type="com.zclient.model.AdminRole" >
+    <id column="id" property="id" jdbcType="INTEGER" />
+    <result column="rolename" property="rolename" jdbcType="VARCHAR" />
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from admin_role
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.zclient.model.AdminRole" >
+    insert into admin_role (id, rolename)
+    values (#{id,jdbcType=INTEGER}, #{rolename,jdbcType=VARCHAR})
+  </insert>
+  <update id="updateByPrimaryKey" parameterType="com.zclient.model.AdminRole" >
+    update admin_role
+    set rolename = #{rolename,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select id, rolename
+    from admin_role
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap" >
+    select id, rolename
+    from admin_role
+  </select>
+
+  <!--通过用户名获取用户角色-->
+  <select id="getRolesByUsername" parameterType="String" resultType="String">
+      select c.rolename
+        from admin_auth a
+        left join admin_auth_role b
+        on a.id=b.auth_id
+        left join admin_role c
+        on c.id=b.role_id
+        where a.adminname= #{username,jdbcType=VARCHAR}
+    </select>
+</mapper>

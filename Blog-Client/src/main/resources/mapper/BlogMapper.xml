@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.com.zclient.mapper.BlogMapper" >
+  <resultMap id="BaseResultMap" type="com.zclient.model.Blog" >
+    <id column="blogid" property="blogid" jdbcType="INTEGER" />
+    <result column="title" property="title" jdbcType="VARCHAR" />
+    <result column="summary" property="summary" jdbcType="VARCHAR" />
+    <result column="create_time" property="createTime" jdbcType="TIMESTAMP" />
+    <result column="categoryid" property="categoryid" jdbcType="INTEGER" />
+    <result column="is_hotspot" property="isHotspot" jdbcType="INTEGER" />
+    <result column="imageurl" property="imageurl" jdbcType="VARCHAR" />
+    <result column="content" property="content" jdbcType="LONGVARCHAR" />
+  </resultMap>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer" >
+    delete from blog
+    where blogid = #{blogid,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.zclient.model.Blog" >
+    insert into blog (blogid, title, summary, 
+      create_time, categoryid, is_hotspot, 
+      imageurl, content)
+    values (#{blogid,jdbcType=INTEGER}, #{title,jdbcType=VARCHAR}, #{summary,jdbcType=VARCHAR}, 
+      #{createTime,jdbcType=TIMESTAMP}, #{categoryid,jdbcType=INTEGER}, #{isHotspot,jdbcType=INTEGER}, 
+      #{imageurl,jdbcType=VARCHAR}, #{content,jdbcType=LONGVARCHAR})
+  </insert>
+
+  <update id="updateByPrimaryKey" parameterType="com.zclient.model.Blog" >
+    update blog
+    set title = #{title,jdbcType=VARCHAR},
+      summary = #{summary,jdbcType=VARCHAR},
+      create_time = #{createTime,jdbcType=TIMESTAMP},
+      categoryid = #{categoryid,jdbcType=INTEGER},
+      is_hotspot = #{isHotspot,jdbcType=INTEGER},
+      imageurl = #{imageurl,jdbcType=VARCHAR},
+      content = #{content,jdbcType=LONGVARCHAR}
+    where blogid = #{blogid,jdbcType=INTEGER}
+  </update>
+  <select id="selectByPrimaryKey" resultMap="BaseResultMap" parameterType="java.lang.Integer" >
+    select blogid, title, summary, create_time, categoryid, is_hotspot, imageurl, content
+    from blog
+    where blogid = #{blogid,jdbcType=INTEGER}
+  </select>
+  <select id="selectAll" resultMap="BaseResultMap" >
+    select blogid, title, summary, create_time, categoryid, is_hotspot, imageurl, content
+    from blog
+  </select>
+  <!--获取首页博客列表-->
+  <select id="getIndexBlog" resultType="java.util.Map" >
+    select blogid, title, summary, create_time , imageurl, content,c_name
+    from blog b
+    left join category c on b.categoryid=c.c_id
+    order by blogid desc
+    limit 10
+  </select>
+  <!--插入浏览记录-->
+  <insert id="insertLookRecord" parameterType="com.zclient.model.Blog">
+      insert into look_records (blogid)
+      values (#{blogid,jdbcType=INTEGER})
+  </insert>
+</mapper>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.com.zclient.mapper.AdminPermissionMapper">
+  <resultMap id="BaseResultMap" type="com.zclient.model.AdminPermission">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="permissionname" jdbcType="INTEGER" property="permissionname" />
+  </resultMap>
+  <!--获取当前用户的所有角色-->
+  <select id="getPermissionsByUsername" parameterType="String" resultType="String">
+    select e.permissionname
+      from admin_auth a
+      left join admin_auth_role b
+        on a.roleid=b.id
+      left join admin_role_permission d
+        on d.roleid=b.id
+      left join admin_permission e
+        on e.id=d.permission_id
+      where a.adminname=#{username,jdbcType=VARCHAR}
+  </select>
+</mapper>
